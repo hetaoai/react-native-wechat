@@ -256,18 +256,11 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
 
         }
 
-        int imageSize = 100;
-        if (data.hasKey("imageSize")) {
-            imageSize = data.getInt("imageSize");
-        }
-
-
-        if (base64Str != null) {
-            byte[] bytes = Base64.decode(base64Str, Base64.DEFAULT);
-            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-            this._share(scene, data, resizeAndCropImage(bitmap, imageSize), callback);
-        } else if (uri != null) {
-
+        if (uri != null) {
+            int imageSize = 100;
+            if (data.hasKey("imageSize")) {
+                imageSize = data.getInt("imageSize");
+            }
             this._getImage(uri, new ResizeOptions(imageSize, imageSize), new ImageCallback() {
                 @Override
                 public void invoke(@Nullable Bitmap bitmap) {
@@ -515,8 +508,8 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         return new WXFileObject(data.getString("filePath"));
     }
 
-    private WXMiniProgramObject __jsonToMiniObject(ReadableMap data) {
-        WXMiniProgramObject ret = new WXMiniProgramObject();
+    private WXMiniProgramObject __jsonToMiniObject(ReadableMap data){
+        WXMiniProgramObject ret =  new WXMiniProgramObject();
         ret.webpageUrl = data.getString("webpageUrl");
         ret.userName = data.getString("userName");
         ret.path = data.getString("path");
