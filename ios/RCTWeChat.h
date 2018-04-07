@@ -28,6 +28,7 @@
 #define RCTWXShareDescription @"description"
 #define RCTWXShareWebpageUrl @"webpageUrl"
 #define RCTWXShareImageUrl @"imageUrl"
+#define RCTWXShareMiniProgram @"miniProgram"
 
 #define RCTWXEventName @"WeChat_Resp"
 

@@ -66,12 +66,12 @@ RCT_EXPORT_METHOD(registerApp:(NSString *)appid
     callback(@[[WXApi registerApp:appid] ? [NSNull null] : INVOKE_FAILED]);
 }
 
-RCT_EXPORT_METHOD(registerAppWithDescription:(NSString *)appid
-                  :(NSString *)appdesc
-                  :(RCTResponseSenderBlock)callback)
-{
-    callback(@[[WXApi registerApp:appid withDescription:appdesc] ? [NSNull null] : INVOKE_FAILED]);
-}
+//RCT_EXPORT_METHOD(registerAppWithDescription:(NSString *)appid
+//                  :(NSString *)appdesc
+//                  :(RCTResponseSenderBlock)callback)
+//{
+//    callback(@[[WXApi registerApp:appid withDescription:appdesc] ? [NSNull null] : INVOKE_FAILED]);
+//}
 
 RCT_EXPORT_METHOD(isWXAppInstalled:(RCTResponseSenderBlock)callback)
 {
@@ -285,6 +285,23 @@ RCT_EXPORT_METHOD(pay:(NSDictionary *)data
                                        MediaTag:mediaTagName
                                        callBack:callback];
 
+        } else if ([type isEqualToString:RCTWXShareMiniProgram]){
+            WXMiniProgramObject * wxMiniObject = [WXMiniProgramObject object];
+            wxMiniObject.webpageUrl = aData[RCTWXShareWebpageUrl];
+            wxMiniObject.userName = aData[@"userName"];
+            wxMiniObject.path = aData[@"path"];
+            wxMiniObject.hdImageData = UIImageJPEGRepresentation(aThumbImage, 0.85);
+            
+            [self shareToWeixinWithMediaMessage:aScene
+                                          Title:title
+                                    Description:description
+                                         Object:wxMiniObject
+                                     MessageExt:messageExt
+                                  MessageAction:messageAction
+                                     ThumbImage:aThumbImage
+                                       MediaTag:mediaTagName
+                                       callBack:callback];
+            
         } else {
             callback(@[@"message type unsupported"]);
         }
@@ -298,7 +315,9 @@ RCT_EXPORT_METHOD(pay:(NSDictionary *)data
     if (imageUrl.length && _bridge.imageLoader) {
         NSURL *url = [NSURL URLWithString:imageUrl];
         NSURLRequest *imageRequest = [NSURLRequest requestWithURL:url];
-        [_bridge.imageLoader loadImageWithURLRequest:imageRequest size:CGSizeMake(100, 100) scale:1 clipped:FALSE resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil
+        NSNumber* imageSize = aData[@"imageSize"];
+        NSInteger sz = imageSize ? [imageSize unsignedLongValue] : 100;
+        [_bridge.imageLoader loadImageWithURLRequest:imageRequest size:CGSizeMake(sz, sz) scale:1 clipped:FALSE resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil
             completionBlock:^(NSError *error, UIImage *image) {
             [self shareToWeixinWithData:aData thumbImage:image scene:aScene callBack:aCallBack];
         }];
