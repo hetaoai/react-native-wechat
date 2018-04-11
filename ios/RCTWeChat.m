@@ -308,19 +308,56 @@ RCT_EXPORT_METHOD(pay:(NSDictionary *)data
     }
 }
 
+UIImage* scaleAndCropImageToSize(UIImage* image, CGSize newSize){
+    float ratio = image.size.width / image.size.height;
+    
+    UIGraphicsBeginImageContext(newSize);
+    
+    if (ratio > 1) {
+        CGFloat newWidth = ratio * newSize.width;
+        CGFloat newHeight = newSize.height;
+        CGFloat leftMargin = (newWidth - newHeight) / 2;
+        [image drawInRect:CGRectMake(-leftMargin, 0, newWidth, newHeight)];
+    }
+    else {
+        CGFloat newWidth = newSize.width;
+        CGFloat newHeight = newSize.height / ratio;
+        CGFloat topMargin = (newHeight - newWidth) / 2;
+        [image drawInRect:CGRectMake(0, -topMargin, newSize.width, newSize.height/ratio)];
+    }
+    
+    UIImage* newImage = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
+    return newImage;
+}
 
 - (void)shareToWeixinWithData:(NSDictionary *)aData scene:(int)aScene callback:(RCTResponseSenderBlock)aCallBack
 {
-    NSString *imageUrl = aData[RCTWXShareTypeThumbImageUrl];
-    if (imageUrl.length && _bridge.imageLoader) {
-        NSURL *url = [NSURL URLWithString:imageUrl];
-        NSURLRequest *imageRequest = [NSURLRequest requestWithURL:url];
+    NSString *image = aData[RCTWXShareTypeThumbImageUrl];
+    if (image.length) {
         NSNumber* imageSize = aData[@"imageSize"];
         NSInteger sz = imageSize ? [imageSize unsignedLongValue] : 100;
-        [_bridge.imageLoader loadImageWithURLRequest:imageRequest size:CGSizeMake(sz, sz) scale:1 clipped:FALSE resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil
-            completionBlock:^(NSError *error, UIImage *image) {
-            [self shareToWeixinWithData:aData thumbImage:image scene:aScene callBack:aCallBack];
-        }];
+        if (_bridge.imageLoader && [image hasPrefix:@"http"]){
+            NSURL *url = [NSURL URLWithString:image];
+            NSURLRequest *imageRequest = [NSURLRequest requestWithURL:url];
+            [_bridge.imageLoader loadImageWithURLRequest:imageRequest
+                                                    size:CGSizeMake(sz, sz)
+                                                   scale:1
+                                                 clipped:FALSE
+                                              resizeMode:RCTResizeModeStretch
+                                           progressBlock:nil
+                                        partialLoadBlock:nil
+                                         completionBlock:^(NSError *error, UIImage *image) {
+                                             [self shareToWeixinWithData:aData thumbImage:image scene:aScene callBack:aCallBack];
+                                         }];
+        } else{
+            NSData* data = [[NSData alloc]initWithBase64EncodedString:image options:NSDataBase64DecodingIgnoreUnknownCharacters];
+            UIImage* image = [UIImage imageWithData:data];
+            UIImage* scaledImage = scaleAndCropImageToSize(image, CGSizeMake(sz, sz));
+//            NSLog(@"%@", [UIImagePNGRepresentation(image) base64EncodedStringWithOptions:NSDataBase64Encoding64CharacterLineLength]);
+            [self shareToWeixinWithData:aData thumbImage:scaledImage scene:aScene callBack:aCallBack];
+        }
     } else {
         [self shareToWeixinWithData:aData thumbImage:nil scene:aScene callBack:aCallBack];
     }

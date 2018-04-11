@@ -3,6 +3,7 @@ package com.theweflex.react;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.annotation.Nullable;
 
@@ -46,6 +47,7 @@ import com.tencent.mm.opensdk.openapi.WXAPIFactory;
 import java.util.ArrayList;
 import java.util.UUID;
 
+import android.util.Base64;
 /**
  * Created by tdzl2_000 on 2015-10-10.
  */
@@ -200,27 +202,63 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         callback.invoke(api.sendReq(payReq) ? null : INVOKE_FAILED);
     }
 
-    private void _share(final int scene, final ReadableMap data, final Callback callback) {
-        Uri uri = null;
-        if (data.hasKey("thumbImage")) {
-            String imageUrl = data.getString("thumbImage");
+    private static Bitmap resizeAndCropImage(Bitmap image, int size) {
+        float ratio = image.getWidth() / (float) image.getHeight();
 
-            try {
-                uri = Uri.parse(imageUrl);
-                // Verify scheme is set, so that relative uri (used by static resources) are not handled.
-                if (uri.getScheme() == null) {
-                    uri = getResourceDrawableUri(getReactApplicationContext(), imageUrl);
-                }
-            } catch (Exception e) {
-                // ignore malformed uri, then attempt to extract resource ID.
-            }
+        int newWidth, newHeight;
+        // horizontal
+        if (ratio > 1) {
+            newHeight = size;
+            newWidth = (int) (size * ratio);
+        } else {
+            newWidth = size;
+            newHeight = (int) (size / ratio);
         }
 
-        if (uri != null) {
-            int imageSize = 100;
-            if (data.hasKey("imageSize")) {
-                imageSize = data.getInt("imageSize");
+        Bitmap scaledImage = Bitmap.createScaledBitmap(image, newWidth, newHeight, true);
+
+        if (ratio > 1) {
+            int offset = (newWidth - size) / 2;
+            return Bitmap.createBitmap(scaledImage, offset, 0, size, size);
+        } else {
+            int offset = (newHeight - size) / 2;
+            return Bitmap.createBitmap(scaledImage, 0, offset, size, size);
+        }
+    }
+
+    private void _share(final int scene, final ReadableMap data, final Callback callback) {
+        Uri uri = null;
+        String base64Str = null;
+        if (data.hasKey("thumbImage")) {
+            String image = data.getString("thumbImage");
+            if (image.startsWith("http")) {
+                try {
+                    uri = Uri.parse(image);
+                    // Verify scheme is set, so that relative uri (used by static resources) are not handled.
+                    if (uri.getScheme() == null) {
+                        uri = getResourceDrawableUri(getReactApplicationContext(), image);
+                    }
+                } catch (Exception e) {
+                    // ignore malformed uri, then attempt to extract resource ID.
+                }
+            } else {
+                base64Str = image;
             }
+
+        }
+
+        int imageSize = 100;
+        if (data.hasKey("imageSize")) {
+            imageSize = data.getInt("imageSize");
+        }
+
+
+        if (base64Str != null) {
+            byte[] bytes = Base64.decode(base64Str, Base64.DEFAULT);
+            Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            this._share(scene, data, resizeAndCropImage(bitmap, imageSize), callback);
+        } else if (uri != null) {
+
             this._getImage(uri, new ResizeOptions(imageSize, imageSize), new ImageCallback() {
                 @Override
                 public void invoke(@Nullable Bitmap bitmap) {
@@ -459,8 +497,8 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         return new WXFileObject(data.getString("filePath"));
     }
 
-    private WXMiniProgramObject __jsonToMiniObject(ReadableMap data){
-        WXMiniProgramObject ret =  new WXMiniProgramObject();
+    private WXMiniProgramObject __jsonToMiniObject(ReadableMap data) {
+        WXMiniProgramObject ret = new WXMiniProgramObject();
         ret.webpageUrl = data.getString("webpageUrl");
         ret.userName = data.getString("userName");
         ret.path = data.getString("path");
