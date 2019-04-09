@@ -3,7 +3,6 @@ package com.theweflex.react;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.support.annotation.Nullable;
 
@@ -27,6 +26,8 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.tencent.mm.opensdk.constants.Build;
+import com.tencent.mm.opensdk.constants.ConstantsAPI;
 import com.tencent.mm.opensdk.modelbase.BaseReq;
 import com.tencent.mm.opensdk.modelbase.BaseResp;
 import com.tencent.mm.opensdk.modelmsg.SendAuth;
@@ -34,6 +35,7 @@ import com.tencent.mm.opensdk.modelmsg.SendMessageToWX;
 import com.tencent.mm.opensdk.modelmsg.WXFileObject;
 import com.tencent.mm.opensdk.modelmsg.WXImageObject;
 import com.tencent.mm.opensdk.modelmsg.WXMediaMessage;
+import com.tencent.mm.opensdk.modelbiz.WXLaunchMiniProgram;
 import com.tencent.mm.opensdk.modelmsg.WXMiniProgramObject;
 import com.tencent.mm.opensdk.modelmsg.WXMusicObject;
 import com.tencent.mm.opensdk.modelmsg.WXTextObject;
@@ -44,15 +46,13 @@ import com.tencent.mm.opensdk.modelpay.PayResp;
 import com.tencent.mm.opensdk.openapi.IWXAPI;
 import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler;
 import com.tencent.mm.opensdk.openapi.WXAPIFactory;
-import com.tencent.mm.opensdk.openapi.IWXAPI;
-import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler;
-import com.tencent.mm.opensdk.openapi.WXAPIFactory;
+import com.tencent.mm.opensdk.utils.Log;
 
-
+import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.UUID;
 
-import android.util.Base64;
 /**
  * Created by tdzl2_000 on 2015-10-10.
  */
@@ -123,12 +123,85 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
     }
 
     @ReactMethod
-    public void isWXAppSupportApi(Callback callback) {
+    public void isWXAppSupportApi(String supportApi,Callback callback) {
         if (api == null) {
             callback.invoke(NOT_REGISTERED);
             return;
         }
-        callback.invoke(null, api.isWXAppSupportAPI());
+        int supportSDKINT = Build.PAY_SUPPORTED_SDK_INT;
+        switch (supportApi) {
+            case "SDK_INT":
+                supportSDKINT = Build.SDK_INT;
+                break;
+            case "MIN_SDK_INT":
+                supportSDKINT = Build.MIN_SDK_INT;
+                break;
+            case "CHECK_TOKEN_SDK_INT":
+                supportSDKINT = Build.CHECK_TOKEN_SDK_INT;
+                break;
+            case "TIMELINE_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.TIMELINE_SUPPORTED_SDK_INT;
+                break;
+            case "EMOJI_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.EMOJI_SUPPORTED_SDK_INT;
+                break;
+            case "MUSIC_DATA_URL_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.MUSIC_DATA_URL_SUPPORTED_SDK_INT;
+                break;
+            case "PAY_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.PAY_SUPPORTED_SDK_INT;
+                break;
+            case "OPENID_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.OPENID_SUPPORTED_SDK_INT;
+                break;
+            case "FAVORITE_SUPPPORTED_SDK_INT":
+                supportSDKINT = Build.FAVORITE_SUPPPORTED_SDK_INT;
+                break;
+            case "MESSAGE_ACTION_SUPPPORTED_SDK_INT":
+                supportSDKINT = Build.MESSAGE_ACTION_SUPPPORTED_SDK_INT;
+                break;
+            case "SCAN_QRCODE_AUTH_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.SCAN_QRCODE_AUTH_SUPPORTED_SDK_INT;
+                break;
+            case "MINIPROGRAM_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.MINIPROGRAM_SUPPORTED_SDK_INT;
+                break;
+            case "VIDEO_FILE_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.VIDEO_FILE_SUPPORTED_SDK_INT;
+                break;
+            case "SUBSCRIBE_MESSAGE_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.SUBSCRIBE_MESSAGE_SUPPORTED_SDK_INT;
+                break;
+            case "LAUNCH_MINIPROGRAM_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.LAUNCH_MINIPROGRAM_SUPPORTED_SDK_INT;
+                break;
+            case "CHOOSE_INVOICE_TILE_SUPPORT_SDK_INT":
+                supportSDKINT = Build.CHOOSE_INVOICE_TILE_SUPPORT_SDK_INT;
+                break;
+            case "INVOICE_AUTH_INSERT_SDK_INT":
+                supportSDKINT = Build.INVOICE_AUTH_INSERT_SDK_INT;
+                break;
+            case "NON_TAX_PAY_SDK_INT":
+                supportSDKINT = Build.NON_TAX_PAY_SDK_INT;
+                break;
+            case "PAY_INSURANCE_SDK_INT":
+                supportSDKINT = Build.PAY_INSURANCE_SDK_INT;
+                break;
+            case "SUBSCRIBE_MINI_PROGRAM_MSG_SUPPORTED_SDK_INT":
+                supportSDKINT = Build.SUBSCRIBE_MINI_PROGRAM_MSG_SUPPORTED_SDK_INT;
+                break;
+            case "OFFLINE_PAY_SDK_INT":
+                supportSDKINT = Build.OFFLINE_PAY_SDK_INT;
+                break;
+            case "SEND_TO_SPECIFIED_CONTACT_SDK_INT":
+                supportSDKINT = Build.SEND_TO_SPECIFIED_CONTACT_SDK_INT;
+                break;
+            case "OPEN_BUSINESS_WEBVIEW_SDK_INT":
+                supportSDKINT = Build.OPEN_BUSINESS_WEBVIEW_SDK_INT;
+                break;
+        }
+        boolean isWXAppSupportAPI = api.getWXAppSupportAPI() >= supportSDKINT;
+        callback.invoke(null, isWXAppSupportAPI);
     }
 
     @ReactMethod
@@ -216,57 +289,24 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         callback.invoke(api.sendReq(payReq) ? null : INVOKE_FAILED);
     }
 
-    private static Bitmap resizeAndCropImage(Bitmap image, int size) {
-        float ratio = image.getWidth() / (float) image.getHeight();
-
-        int newWidth, newHeight;
-        // horizontal
-        if (ratio > 1) {
-            newHeight = size;
-            newWidth = (int) (size * ratio);
-        } else {
-            newWidth = size;
-            newHeight = (int) (size / ratio);
-        }
-
-        Bitmap scaledImage = Bitmap.createScaledBitmap(image, newWidth, newHeight, true);
-
-        if (ratio > 1) {
-            int offset = (newWidth - size) / 2;
-            return Bitmap.createBitmap(scaledImage, offset, 0, size, size);
-        } else {
-            int offset = (newHeight - size) / 2;
-            return Bitmap.createBitmap(scaledImage, 0, offset, size, size);
-        }
-    }
-
     private void _share(final int scene, final ReadableMap data, final Callback callback) {
         Uri uri = null;
-        String base64Str = null;
         if (data.hasKey("thumbImage")) {
-            String image = data.getString("thumbImage");
-            if (image.startsWith("http")) {
-                try {
-                    uri = Uri.parse(image);
-                    // Verify scheme is set, so that relative uri (used by static resources) are not handled.
-                    if (uri.getScheme() == null) {
-                        uri = getResourceDrawableUri(getReactApplicationContext(), image);
-                    }
-                } catch (Exception e) {
-                    // ignore malformed uri, then attempt to extract resource ID.
-                }
-            } else {
-                base64Str = image;
-            }
+            String imageUrl = data.getString("thumbImage");
 
+            try {
+                uri = Uri.parse(imageUrl);
+                // Verify scheme is set, so that relative uri (used by static resources) are not handled.
+                if (uri.getScheme() == null) {
+                    uri = getResourceDrawableUri(getReactApplicationContext(), imageUrl);
+                }
+            } catch (Exception e) {
+                // ignore malformed uri, then attempt to extract resource ID.
+            }
         }
 
         if (uri != null) {
-            int imageSize = 100;
-            if (data.hasKey("imageSize")) {
-                imageSize = data.getInt("imageSize");
-            }
-            this._getImage(uri, new ResizeOptions(imageSize, imageSize), new ImageCallback() {
+            this._getImage(uri, new ResizeOptions(100, 100), new ImageCallback() {
                 @Override
                 public void invoke(@Nullable Bitmap bitmap) {
                     WeChatModule.this._share(scene, data, bitmap, callback);
@@ -374,7 +414,7 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         } else if (type.equals("file")) {
             mediaObject = __jsonToFileMedia(data);
         } else if (type.equals("miniProgram")) {
-            mediaObject = __jsonToMiniObject(data);
+            mediaObject = __jsonToMiniProgramMedia(data);
         }
 
         if (mediaObject == null) {
@@ -513,14 +553,6 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
         return new WXFileObject(data.getString("filePath"));
     }
 
-    private WXMiniProgramObject __jsonToMiniObject(ReadableMap data){
-        WXMiniProgramObject ret =  new WXMiniProgramObject();
-        ret.webpageUrl = data.getString("webpageUrl");
-        ret.userName = data.getString("userName");
-        ret.path = data.getString("path");
-        return ret;
-    }
-
     // TODO: 实现sendRequest、sendSuccessResponse、sendErrorCommonResponse、sendErrorUserCancelResponse
 
     @Override
@@ -565,6 +597,17 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
 
     private interface MediaObjectCallback {
         void invoke(@Nullable WXMediaMessage.IMediaObject mediaObject);
+    }
+
+    private WXMiniProgramObject __jsonToMiniProgramMedia(ReadableMap data) {
+        if (!data.hasKey("userName")) {
+            return null;
+        }
+        WXMiniProgramObject miniProgramObj = new WXMiniProgramObject();
+        miniProgramObj.webpageUrl = data.getString("webpageUrl"); // 兼容低版本的网页链接
+        miniProgramObj.userName = data.getString("userName");    // 小程序原始id
+        miniProgramObj.path = data.getString("path");         //小程序页面路径
+        return miniProgramObj;
     }
 
 }
