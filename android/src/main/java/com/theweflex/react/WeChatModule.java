@@ -330,7 +330,8 @@ public class WeChatModule extends ReactContextBaseJavaModule implements IWXAPIEv
                         imageCallback.invoke(bitmap);
                     }
                 } else {
-                    throw new Exception("Empty bitmap");
+                    // TODO: better handling
+                    // throw new Exception("Empty bitmap");
                 }
             }
 
